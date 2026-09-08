@@ -9,7 +9,7 @@ on:
       - '.github/workflows/kappa-validation-v2-1.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: kfin-v2-1-one-use-confirmatory
@@ -39,6 +39,8 @@ jobs:
       - name: Run KFIN-v2.1 once
         id: validation
         continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -o pipefail
           python kappa_validation_v2_1.py 2>&1 | tee validation_v2_1_console.log
@@ -56,6 +58,78 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           overwrite: false
+
+      - name: Persist consumed identity on live main
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          canonical_path = 'receipts/KFIN-V2_1-20260908-002.json'
+          scientific = Path('validation_v2_1_receipt.json')
+          error = Path('validation_v2_1_error_receipt.json')
+          refusal = Path('validation_v2_1_refusal_receipt.json')
+
+          # A refusal means durable consumption already exists or the executor
+          # itself was inadmissible. Never overwrite the existing canonical scar.
+          if refusal.exists():
+              print('refusal terminal present; canonical persistence intentionally skipped')
+              sys.exit(0)
+
+          terminal_files = [p for p in (scientific, error) if p.exists()]
+          if len(terminal_files) != 1:
+              raise SystemExit(f'exactly one scientific/error receipt required for persistence; found {len(terminal_files)}')
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          token = os.environ['GITHUB_TOKEN']
+          encoded = urllib.parse.quote(canonical_path, safe='/')
+          get_url = f'https://api.github.com/repos/{repo}/contents/{encoded}?ref=main'
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+              'User-Agent': 'kfin-v2-1-consumption-writer',
+          }
+
+          get_req = urllib.request.Request(get_url, headers=headers, method='GET')
+          try:
+              with urllib.request.urlopen(get_req, timeout=20) as response:
+                  if response.status == 200:
+                      raise SystemExit('canonical KFIN-v2.1 receipt already exists; overwrite refused')
+                  raise SystemExit(f'unexpected canonical-receipt GET status {response.status}')
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404:
+                  raise SystemExit(f'canonical-receipt preflight failed HTTP {exc.code}') from exc
+
+          payload_bytes = terminal_files[0].read_bytes()
+          body = json.dumps({
+              'message': 'Consume KFIN-V2.1 identity with first terminal receipt',
+              'content': base64.b64encode(payload_bytes).decode('ascii'),
+              'branch': 'main',
+          }).encode('utf-8')
+          put_req = urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/contents/{encoded}',
+              data=body,
+              headers={**headers, 'Content-Type': 'application/json'},
+              method='PUT',
+          )
+          try:
+              with urllib.request.urlopen(put_req, timeout=30) as response:
+                  result = json.loads(response.read().decode('utf-8'))
+                  print('canonical receipt persisted at commit:', result.get('commit', {}).get('sha'))
+          except urllib.error.HTTPError as exc:
+              detail = exc.read().decode('utf-8', errors='replace')
+              raise SystemExit(f'canonical receipt persistence failed HTTP {exc.code}: {detail[:500]}') from exc
+          PY
 
       - name: Adjudicate execution class
         if: always()
@@ -75,7 +149,7 @@ jobs:
               raise SystemExit(f'exactly one terminal receipt required; found {len(existing)}')
           if refusal.exists():
               print(refusal.read_text())
-              raise SystemExit('repeat/consumed identity refused')
+              raise SystemExit('repeat or unauthorized executor refused')
           if error.exists():
               print(error.read_text())
               raise SystemExit('implementation/data error before scientific terminal')
