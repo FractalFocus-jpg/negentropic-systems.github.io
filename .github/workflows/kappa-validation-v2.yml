@@ -1,0 +1,65 @@
+name: Kappa Validation v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'kappa_validation_v2.py'
+      - 'VALIDATION_PROTOCOL_V2.md'
+      - 'sp500.csv'
+      - '.github/workflows/kappa-validation-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas numpy scikit-learn
+
+      - name: Run frozen v2 validation
+        id: validation
+        continue-on-error: true
+        run: |
+          python kappa_validation_v2.py | tee validation_v2_console.log
+
+      - name: Upload immutable run receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kappa-validation-v2-receipt-${{ github.sha }}
+          path: |
+            validation_v2_receipt.json
+            validation_v2_console.log
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce implementation integrity
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('validation_v2_receipt.json')
+          if not p.exists():
+              raise SystemExit('receipt missing')
+          r = json.loads(p.read_text())
+          print('terminal:', r.get('terminal'))
+          if r.get('terminal') == 'IMPLEMENTATION_OR_DATA_ERROR_BEFORE_SCIENTIFIC_TERMINAL':
+              raise SystemExit('v2 implementation/data error')
+          PY
