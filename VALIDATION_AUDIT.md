@@ -2,177 +2,129 @@
 ## Current controlling public audit state
 
 **Last updated:** 2026-09-08  
-**Status:** HISTORICAL ADVERSE AUDIT PRESERVED + CLEAN SUCCESSOR EXECUTED  
-**Current finance successor terminal:** `INCREMENTAL_KAPPA_CONTENT_PASS` — bounded / metric-specific  
-**Governance:** preserve historical outputs; never repair a failed interpretation in place.
+**Historical March terminal:** adverse / invalidated validation  
+**KFIN-V2-20260908-001:** raw PASS preserved, controlling terminal = PROCEDURAL FAIL  
+**Fresh valid successor:** `KFIN-V2_1-20260908-002`
 
 ---
 
-## A. 2026-09-08 independent cold audit — historical S&P experiment
+## A. Historical March S&P experiment
 
-**Evidence class:** friendly independent cold run / adverse / non-adjudicative  
-**Audited artifacts:** historical `kappa_analysis.py` + `sp500.csv`
+The March script reproducibly returned 100% precision / 25% recall, but the 2026-09-08 independent cold audit found:
 
-### Positive reproduction
+1. target circularity — β and the target-generating volatility series were identical;
+2. weak baseline — prevalence/random comparison was inadequate for an autocorrelated volatility target;
+3. target-threshold leakage — the target q80 used the full sample including test data.
 
-The historical script reproduced:
-
-- Precision: 100.0% (16/16)
-- Recall: 25.0% (16/64)
-
-This established computational reproducibility only.
-
-### Finding A1 — target circularity
-
-Historical definitions:
-
-```text
-β = returns.rolling(20).std() * sqrt(252)
-volatility = returns.rolling(20).std() * sqrt(252)
-high_vol = volatility > full-sample 80th percentile
-prediction = prior-day κ signal
-```
-
-β and the target-generating volatility series were identical, and the one-day shift left 19/20 observations shared across adjacent windows.
-
-### Finding A2 — baseline failure
-
-Cold-audit controls:
-
-- Persistence: ~94.9% precision / ~94.9% recall
-- β-only: 100% precision / 39.0% recall
-- Published κ: 100% precision / ~25–27% recall
-
-The historical prevalence/random comparison was inadequate, β-only strictly dominated the published κ signal at equal precision, and persistence was a much stronger practical baseline.
-
-### Finding A3 — target-threshold leakage
-
-The historical target threshold used the full sample including the test period.
-
-### Historical terminal — immutable
+Historical terminal:
 
 ```text
 REPRODUCIBLE_CODE__CIRCULAR_TARGET__DOMINATED_BY_TRIVIAL_BASELINES__NO_INDEPENDENT_PREDICTIVE_CONTENT_DEMONSTRATED
 ```
 
-This terminal remains true even though a later successor test passed. The successor does not retroactively validate the March design.
+This terminal is immutable.
 
 ---
 
-## B. Clean successor — KFIN-V2-20260908-001
+## B. KFIN-V2-20260908-001 redesign
 
-The replacement protocol was frozen before execution in `VALIDATION_PROTOCOL_V2.md`.
+The first redesign correctly introduced:
 
-### B1. Design corrections
+- future non-overlapping t+1..t+20 volatility target;
+- training-only target threshold;
+- training-only score thresholds;
+- train/test target-window separation;
+- persistence and β-only comparators;
+- β×D and β/ρ ablations;
+- frozen average-precision pass conditions;
+- first-terminal/no-retry policy.
 
-- Non-overlapping future realized-volatility target: t+1..t+20
-- Training-only target threshold
-- Training-only score thresholds
-- Explicit train/test target-window separation
-- β-only comparator
-- Persistence comparator
-- no-ρ ablation: β×D
-- no-D ablation: β/ρ
-- Full κ: βD/ρ
-- Frozen held-out average-precision pass rule
-- First-terminal / no-retry rule
+Raw run custody:
 
-### B2. Execution custody
-
-- GitHub Actions run: `34243432146`
-- Frozen execution commit: `480933cf6e339dc85dba93edf9bb24e91433c7d5`
-- Artifact ID: `10062961206`
+- Workflow run: `34243432146`
+- Execution commit: `480933cf6e339dc85dba93edf9bb24e91433c7d5`
+- Artifact: `10062961206`
 - Artifact ZIP SHA-256: `98f51bc17ab6b04a39a1d4dc06832dc5d6ab326abd62b0925d9ce69f1f634bc2`
 - Receipt SHA-256: `40f325b1758eeeed465b57c2bdf85465aea591c0af4dd16a4cb3a8a427d8e3de`
 - Console SHA-256: `3c0d03629689bef51ab2af2d5ef3e4d92209f53254f733d9f8eb27514a700af1`
-- Repository receipt: `receipts/KFIN-V2-20260908-001.json`
 
-### B3. Integrity results
+Raw AP values:
 
-All passed:
+- β: 0.2383
+- β×D: 0.3114
+- β/ρ: 0.2970
+- κ: 0.3859
+- persistence: 0.2200
 
-- declared feature/target non-overlap;
-- feature-date split validity;
-- target-end after feature date;
-- train targets ending before test start;
-- thresholds training-only.
+The workflow emitted `INCREMENTAL_KAPPA_CONTENT_PASS`.
 
-Admitted rows:
+---
 
-- Train: 3,453
-- Test: 529
-- Positive targets: 59
-- Prevalence: 11.15%
+## C. Post-run Codex review — adverse procedural findings
 
-### B4. Held-out results
+### C1. Persistence threshold mismatch
 
-| Score | Average precision | ROC-AUC | Precision | Recall | F1 |
-|---|---:|---:|---:|---:|---:|
-| β | 0.2383 | 0.6835 | 0.3478 | 0.1356 | 0.1951 |
-| β×D | 0.3114 | 0.6269 | 0.6429 | 0.1525 | 0.2466 |
-| β/ρ | 0.2970 | 0.6732 | 0.3750 | 0.1525 | 0.2169 |
-| **κ = βD/ρ** | **0.3859** | 0.6429 | **0.6875** | 0.1864 | 0.2933 |
-| Persistence | 0.2200* | — | 0.3898 | 0.3898 | **0.3898** |
+The preregistered protocol defined persistence against the training **target threshold**. The implementation instead recalculated q80 from `train["beta"]`.
 
-`*` Persistence AP uses the frozen binary score.
+Both thresholds happened to equal `0.19696579040212642` in this dataset, so this defect did not numerically alter the raw persistence predictions. The protocol/implementation mismatch still prevents a valid confirmatory PASS.
 
-### B5. First terminal
+### C2. Receipt overwrite weakness
 
-All preregistered average-precision comparisons and integrity gates passed:
+The implementation used `Path.write_text`, which can truncate an existing receipt on repeat local execution. This violated structural enforcement of first-terminal preservation, even though the GitHub artifact from the first run remains separately preserved and hash-bound.
+
+### Controlling adjudication
 
 ```text
-INCREMENTAL_KAPPA_CONTENT_PASS
+PROCEDURAL_FAIL__PERSISTENCE_BASELINE_IMPLEMENTATION_MISMATCH__RAW_RECEIPT_PRESERVED
 ```
 
-### B6. Claim ceiling
+The raw workflow terminal is diagnostic only and may not be cited as a valid confirmatory success.
 
-The pass demonstrates bounded incremental ranking content for this exact frozen finance mapping and held-out AP criterion. It does not demonstrate universal κ, causal finance mechanism, general alpha, investment suitability, production readiness, or cross-domain universality.
+Adjudication file:
 
-The metrics are deliberately not summarized as universal dominance:
-
-- β ROC-AUC exceeded κ ROC-AUC: 0.6835 > 0.6429.
-- Persistence F1 exceeded κ F1: 0.3898 > 0.2933.
-- κ recall at the frozen q95 alert threshold was 18.64%.
+`adjudications/KFIN-V2-20260908-001.md`
 
 ---
 
-## C. Public / funding / legal correction state
+## D. Fresh successor requirements — KFIN-V2_1-20260908-002
 
-Retired permanently from the March experiment:
+The fresh successor must:
 
-- `100% precision validated`
-- `+88.32% improvement vs baseline`
-- `Validation: SUCCESS` as evidence of independent κ prediction
-- claims that the old hold-out construction by itself prevented leakage/circularity
+1. use the exact frozen target threshold for persistence;
+2. preserve the V2 scientific target/split/scores/metrics/pass rule unless separately preregistered otherwise;
+3. write a scientific receipt with create-only/exclusive semantics;
+4. write implementation errors separately and never overwrite a scientific receipt;
+5. reject GitHub Actions rerun attempts (`GITHUB_RUN_ATTEMPT > 1`) for the same run identity;
+6. preserve predecessor raw receipt + procedural adjudication as immutable ancestry;
+7. undergo automated code review before confirmatory merge/execution;
+8. use a fresh experiment ID and first terminal.
 
-Permitted current statement:
-
-> A preregistered non-overlapping future-volatility successor produced a bounded incremental-content PASS on its frozen average-precision criterion; stronger conventional baselines, uncertainty analysis, repeated holdouts, and independent reconstruction remain open.
-
-Do not promote the successor beyond that sentence in funding, outreach, legal, investor, licensing or customer materials.
-
----
-
-## D. Next-proof requirements
-
-1. block/bootstrap uncertainty intervals;
-2. multiple independent temporal holdouts and/or prospective data;
-3. preregistered HAR/GARCH-family or equivalently strong conventional volatility comparator;
-4. independent clean-room implementation from the written protocol;
-5. external receipt reconstruction;
-6. calibration and decision-utility analysis before any financial-action claim;
-7. preserve every first adverse terminal and do not retry-to-win.
+Only after these gates close may a new scientific terminal be considered.
 
 ---
 
-## E. Other domains
+## E. Public / funding / legal state
+
+Do not cite as current evidence:
+
+- March `100% precision validated`;
+- `+88.32% improvement`;
+- KFIN-V2 raw `INCREMENTAL_KAPPA_CONTENT_PASS`.
+
+Current permitted statement:
+
+> The historical finance validation failed independent audit. A redesigned run produced promising raw ranking results, but post-run code review found a protocol implementation mismatch; that run is preserved as a procedural failure while a corrected fresh successor is prepared.
+
+---
+
+## F. Other domain states
 
 - VIX: underperforming historical diagnostic; not validated.
-- Solar: monitoring evidence only; predictive accuracy open.
+- Solar: monitoring/data pipeline only; predictive validation open.
 - Neural/EEG: simulation/literature comparator; real-data validation pending.
-- Crypto: diagnostic results require the same leakage/baseline/ablation audit before promotion.
+- Crypto: diagnostic claims require leakage/baseline/ablation audit before promotion.
 - Forex: no completed validation.
 
 ---
 
-**Audit law:** the project improved because the adverse receipt was allowed to break the old claim. The successor earned a new claim under a different design; it did not erase the scar.
+**Audit law:** no result becomes stronger because its bug was numerically harmless on one dataset. Frozen methodology is part of the experiment.
