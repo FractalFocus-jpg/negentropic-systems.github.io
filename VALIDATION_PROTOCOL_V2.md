@@ -157,4 +157,12 @@ Before restoring public `validated` language:
 5. independent implementation from the written protocol;
 6. frozen external reconstruction receipt.
 
+---
+
+## 11. Confirmatory execution membrane
+
+The first confirmatory run is executed by `.github/workflows/kappa-validation-v2.yml` on the repository's `main` branch. The workflow installs only the declared Python analysis dependencies, runs `kappa_validation_v2.py`, emits `validation_v2_receipt.json`, uploads that receipt plus console output as a GitHub Actions artifact, and treats implementation/data error as a failed workflow. A scientific FAIL terminal remains a valid executed result and must not be converted into a CI retry-to-win.
+
+This section freezes the executor before the first confirmatory run; it does not change the target, score definitions, split, thresholds, metrics, or pass rule above.
+
 **Governing sentence:** the redesigned test must make κ earn information that β, persistence, and its own ablations do not already contain.
