@@ -1,0 +1,329 @@
+{
+  "analysis_class": "POST_TERMINAL_DIAGNOSTIC__SAME_OBSERVED_HOLDOUT__NON_INDEPENDENT",
+  "analysis_id": "KFIN-S38-F1-20260908-001",
+  "bootstrap": {
+    "20": {
+      "block_length": 20,
+      "comparison_intervals": {
+        "beta": {
+          "bonferroni_interval_original_four": [
+            -0.06750410428691177,
+            0.3879603325686812
+          ],
+          "delta_ap": 0.14764254801159668,
+          "fraction_bootstrap_delta_positive": 0.9020670278948425,
+          "percentile_interval_95": [
+            -0.024777990515755542,
+            0.31241305651169055
+          ]
+        },
+        "beta_D": {
+          "bonferroni_interval_original_four": [
+            -0.000732607666382267,
+            0.24983380028979835
+          ],
+          "delta_ap": 0.07452614188974704,
+          "fraction_bootstrap_delta_positive": 0.9654826409793297,
+          "percentile_interval_95": [
+            -0.00012930260346177722,
+            0.19106671564603117
+          ]
+        },
+        "beta_over_rho": {
+          "bonferroni_interval_original_four": [
+            -0.1310694958554691,
+            0.32305887915741444
+          ],
+          "delta_ap": 0.08895038863127769,
+          "fraction_bootstrap_delta_positive": 0.759983945414409,
+          "percentile_interval_95": [
+            -0.09128101249964743,
+            0.23970851959313338
+          ]
+        },
+        "ewma": {
+          "bonferroni_interval_original_four": null,
+          "delta_ap": 0.10668794295542466,
+          "fraction_bootstrap_delta_positive": 0.7864740116395745,
+          "percentile_interval_95": [
+            -0.08705208541045771,
+            0.30856304927050265
+          ]
+        },
+        "garch": {
+          "bonferroni_interval_original_four": null,
+          "delta_ap": -0.005115337287629695,
+          "fraction_bootstrap_delta_positive": 0.3937387116195063,
+          "percentile_interval_95": [
+            -0.15429346365933183,
+            0.17505374105717902
+          ]
+        },
+        "persistence": {
+          "bonferroni_interval_original_four": [
+            -0.03370971799954011,
+            0.42134087121883196
+          ],
+          "delta_ap": 0.16588929454375345,
+          "fraction_bootstrap_delta_positive": 0.9086895444511338,
+          "percentile_interval_95": [
+            -0.018322650311223064,
+            0.345064288451208
+          ]
+        }
+      },
+      "interpretation": "Paired conditional descriptive intervals; not selection-adjusted or prospective confidence.",
+      "invalid": 17,
+      "replicates_attempted": 5000,
+      "valid": 4983
+    },
+    "40": {
+      "block_length": 40,
+      "comparison_intervals": {
+        "beta": {
+          "bonferroni_interval_original_four": [
+            -0.08507369084444967,
+            0.3969922613729058
+          ],
+          "delta_ap": 0.14764254801159668,
+          "fraction_bootstrap_delta_positive": 0.8493570116350275,
+          "percentile_interval_95": [
+            -0.026386412651756456,
+            0.30612367306650046
+          ]
+        },
+        "beta_D": {
+          "bonferroni_interval_original_four": [
+            -0.000683893821624845,
+            0.1938779123486279
+          ],
+          "delta_ap": 0.07452614188974704,
+          "fraction_bootstrap_delta_positive": 0.9467238211879976,
+          "percentile_interval_95": [
+            -0.0002177910477293078,
+            0.143375535885321
+          ]
+        },
+        "beta_over_rho": {
+          "bonferroni_interval_original_four": [
+            -0.11836337070070778,
+            0.3946948003784486
+          ],
+          "delta_ap": 0.08895038863127769,
+          "fraction_bootstrap_delta_positive": 0.750357215758318,
+          "percentile_interval_95": [
+            -0.07950008860253185,
+            0.2738665645448908
+          ]
+        },
+        "ewma": {
+          "bonferroni_interval_original_four": null,
+          "delta_ap": 0.10668794295542466,
+          "fraction_bootstrap_delta_positive": 0.7879159012043274,
+          "percentile_interval_95": [
+            -0.10038369653895873,
+            0.2210973806204844
+          ]
+        },
+        "garch": {
+          "bonferroni_interval_original_four": null,
+          "delta_ap": -0.005115337287629695,
+          "fraction_bootstrap_delta_positive": 0.37395386813635434,
+          "percentile_interval_95": [
+            -0.14493330572179144,
+            0.10728646111611727
+          ]
+        },
+        "persistence": {
+          "bonferroni_interval_original_four": [
+            -0.03079464297256956,
+            0.39895545420459844
+          ],
+          "delta_ap": 0.16588929454375345,
+          "fraction_bootstrap_delta_positive": 0.8540518473157788,
+          "percentile_interval_95": [
+            -0.02084460044892218,
+            0.3061788552495659
+          ]
+        }
+      },
+      "interpretation": "Paired conditional descriptive intervals; not selection-adjusted or prospective confidence.",
+      "invalid": 101,
+      "replicates_attempted": 5000,
+      "valid": 4899
+    },
+    "60": {
+      "block_length": 60,
+      "comparison_intervals": {
+        "beta": {
+          "bonferroni_interval_original_four": [
+            -0.050467051833425355,
+            0.35869611949234015
+          ],
+          "delta_ap": 0.14764254801159668,
+          "fraction_bootstrap_delta_positive": 0.8327855382087099,
+          "percentile_interval_95": [
+            -0.018747254782194904,
+            0.28159751322591414
+          ]
+        },
+        "beta_D": {
+          "bonferroni_interval_original_four": [
+            -0.0006776416822587464,
+            0.17984829843747016
+          ],
+          "delta_ap": 0.07452614188974704,
+          "fraction_bootstrap_delta_positive": 0.9363188167625308,
+          "percentile_interval_95": [
+            -0.0002893140934092791,
+            0.13837950414797404
+          ]
+        },
+        "beta_over_rho": {
+          "bonferroni_interval_original_four": [
+            -0.09739871136010618,
+            0.35705357330223264
+          ],
+          "delta_ap": 0.08895038863127769,
+          "fraction_bootstrap_delta_positive": 0.7923171733771569,
+          "percentile_interval_95": [
+            -0.0638078373757305,
+            0.24002743150711275
+          ]
+        },
+        "ewma": {
+          "bonferroni_interval_original_four": null,
+          "delta_ap": 0.10668794295542466,
+          "fraction_bootstrap_delta_positive": 0.7828677074774034,
+          "percentile_interval_95": [
+            -0.08495101845520713,
+            0.20840449049086127
+          ]
+        },
+        "garch": {
+          "bonferroni_interval_original_four": null,
+          "delta_ap": -0.005115337287629695,
+          "fraction_bootstrap_delta_positive": 0.3792111750205423,
+          "percentile_interval_95": [
+            -0.13184366421576005,
+            0.10023036086075165
+          ]
+        },
+        "persistence": {
+          "bonferroni_interval_original_four": [
+            -0.02713180067713728,
+            0.3592197626090303
+          ],
+          "delta_ap": 0.16588929454375345,
+          "fraction_bootstrap_delta_positive": 0.8270336894001643,
+          "percentile_interval_95": [
+            -0.02004187282045202,
+            0.2895656580517134
+          ]
+        }
+      },
+      "interpretation": "Paired conditional descriptive intervals; not selection-adjusted or prospective confidence.",
+      "invalid": 132,
+      "replicates_attempted": 5000,
+      "valid": 4868
+    }
+  },
+  "claim": {
+    "analysis_id": "KFIN-S38-F1-20260908-001",
+    "data_sha256": "30c8b42de4a4cf47b1c67d5117740024ef3a94092df2a0eba0ee906b929d90fc",
+    "github_run_id": "34254713714",
+    "github_sha": "de5ecd9b9c1748d35c148260f3ec3d5d46671a68",
+    "parent_receipt_sha256": "87ef8e803cc0a4e5420b09b4d4a4965608e363429c00dcb15e731fd34f3e3468",
+    "protocol_sha256": "faec6b247ea9ac1d3dd20933889471e1a7e4ba31e7b6f5f7bc403ddd1df766f1",
+    "script_sha256": "e321db58475054a22e15709107f392299898818b14eabdb5a6c41c4ba8ee92c3",
+    "status": "RESERVED_BEFORE_ANALYSIS"
+  },
+  "conventional_baselines": {
+    "alpha": 0.1583136868758495,
+    "beta": 0.8119198616126635,
+    "ewma_decay": 0.94,
+    "fixed_parameters_during_test": true,
+    "model": "Zero-mean Gaussian QMLE GARCH(1,1)",
+    "omega": 0.03470598412626225,
+    "optimizer_successes": 3,
+    "selected_by": "minimum TRAINING likelihood among three fixed optimizer initializations",
+    "target_note": "Mean future conditional variance is a volatility-ranking proxy, not an exact forecast of centered sample SD.",
+    "training_end": "2023-12-29",
+    "training_observations": 3521
+  },
+  "environment": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "python": "3.11.16 (main, Aug 13 2026, 02:46:14) [GCC 13.3.0]",
+    "scipy": "1.17.1",
+    "sklearn": "1.9.0"
+  },
+  "limitations": [
+    "Same previously inspected data: not a new blind confirmatory test.",
+    "Bootstrap conditions on realized scores and fitted model; does not account for model selection or training-parameter uncertainty.",
+    "Circular blocks assume adequate within-period stationarity; 20/40/60 sensitivity is not a proof of coverage.",
+    "Disjoint feature/target returns do not make adjacent targets independent.",
+    "No causal, trading-profit, medical, physical, universal-kappa or autonomy claim.",
+    "V2.1 raw numbers preserved; final pre-merge reservation finding was unresolved. Fully-cleared confirmatory review claim withdrawn."
+  ],
+  "parent_entrypoint_executed": false,
+  "parent_id": "KFIN-V2_1-20260908-002",
+  "parent_raw_aps_reconstructed": true,
+  "point_metrics": {
+    "beta": {
+      "average_precision": 0.23826750192641424,
+      "roc_auc": 0.683483591777858
+    },
+    "beta_D": {
+      "average_precision": 0.3113839080482639,
+      "roc_auc": 0.6268662098809954
+    },
+    "beta_over_rho": {
+      "average_precision": 0.29695966130673324,
+      "roc_auc": 0.6732059141723765
+    },
+    "ewma": {
+      "average_precision": 0.27922210698258626,
+      "roc_auc": 0.679841327082582
+    },
+    "garch": {
+      "average_precision": 0.3910253872256406,
+      "roc_auc": 0.7721601153984854
+    },
+    "kappa": {
+      "average_precision": 0.3859100499380109,
+      "roc_auc": 0.6428777497295348
+    },
+    "persistence": {
+      "average_precision": 0.22002075539425747,
+      "roc_auc": 0.6566173818968626
+    }
+  },
+  "sample": {
+    "adjacent_target_windows_share_returns": 19,
+    "positive_label_runs": [
+      {
+        "end": "2024-07-09",
+        "rows": 1,
+        "start": "2024-07-09"
+      },
+      {
+        "end": "2024-07-31",
+        "rows": 15,
+        "start": "2024-07-11"
+      },
+      {
+        "end": "2025-04-15",
+        "rows": 43,
+        "start": "2025-02-13"
+      }
+    ],
+    "positive_rows": 59,
+    "positive_runs_are_not_independent_events": true,
+    "test_end": "2026-02-10",
+    "test_rows": 529,
+    "test_start": "2024-01-02",
+    "train_rows": 3453
+  },
+  "terminal": "UNCERTAINTY_NOT_RESOLVED__POINT_ESTIMATE_ONLY"
+}
