@@ -332,6 +332,15 @@ def main() -> int:
         print(f"\nCreated {SCIENTIFIC_RECEIPT_PATH} exclusively")
         return 0
     except Exception as exc:
+        # A refusal is already a complete terminal for this invocation. Do not
+        # create a second implementation-error receipt for the same event.
+        if REFUSAL_RECEIPT_PATH.exists():
+            try:
+                print(REFUSAL_RECEIPT_PATH.read_text(encoding="utf-8"), file=sys.stderr)
+            except OSError:
+                print(f"Repeat/consumed identity refused: {exc}", file=sys.stderr)
+            return 2
+
         # Never overwrite a scientific terminal. If one already exists, report
         # the later exception to stderr only. Otherwise create a separate error
         # receipt exactly once.
