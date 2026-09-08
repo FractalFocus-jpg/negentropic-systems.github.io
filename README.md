@@ -1,9 +1,17 @@
 # KappaRisk Validation Platform
 ## κ-Stability Research and Audit Harness
 
-**Current public status (2026-09-08): validation claims corrected after independent cold audit.**
+**Current public status (2026-09-08): historical S&P validation claim retired; clean v2 incremental-content test executed with a bounded PASS.**
 
-The repository remains reproducible as code, but the original S&P 500 validation claim has been retired. An independent cold audit (Claude/Rhythm, 2026-09-08) reproduced the published 100% precision / 25% recall numbers and then identified target circularity, an inappropriate prevalence/random baseline, and test-label leakage. The published S&P experiment therefore does **not** demonstrate independent predictive value for κ.
+The original March S&P 500 experiment remains reproducible as code, but its validation interpretation was invalidated by a 2026-09-08 independent cold audit that found target circularity, weak baselines, and target-threshold leakage. That historical claim remains retired.
+
+A new preregistered successor, `KFIN-V2-20260908-001`, was then frozen **before execution** and run on GitHub Actions with a non-overlapping 20-day future-volatility target, training-only thresholds, persistence and β-only baselines, D/ρ ablations, and an explicit first-terminal rule. It returned:
+
+```text
+INCREMENTAL_KAPPA_CONTENT_PASS
+```
+
+This means only that full κ beat the preregistered comparison scores on the protocol's held-out **average-precision** criterion. It is not a universal-κ result, financial-alpha proof, investment recommendation, causal result, or production-readiness claim.
 
 ---
 
@@ -11,94 +19,119 @@ The repository remains reproducible as code, but the original S&P 500 validation
 
 | Domain | Current state | Public claim ceiling |
 |---|---|---|
-| S&P 500 | Reproducible code; original validation invalidated | No independent κ predictive content demonstrated yet |
+| S&P 500 | Historical test invalidated; KFIN-v2 bounded incremental-content PASS | Candidate incremental finance signal; external reconstruction and stronger baselines still required |
 | VIX | Underperforming diagnostic | Not validated |
 | Solar | Monitoring / data pipeline | Prediction accuracy not yet validated |
 | Neural / EEG | Simulation + literature comparator | Real-data validation pending |
-| Crypto | Diagnostic only | Requires independent baseline and leakage audit |
+| Crypto | Diagnostic only | Requires leakage/baseline/ablation audit |
 | Forex | Not started | No claim |
 
-### S&P 500 adverse audit
+---
 
-The original script defined:
+## Why the historical claim was retired
+
+The March script used:
 
 - `β` = 20-day annualized rolling volatility
 - target `high_vol` = the same 20-day annualized rolling volatility thresholded at the 80th percentile
 - prediction = previous-day κ signal
 
-Because adjacent 20-day windows share 19 of 20 observations, this created a circular / overlapping target structure. The original computation is reproducible, but the interpretation was not valid.
+Adjacent feature/target windows therefore shared 19 of 20 observations. The computation reproduced, but the test did not isolate independent κ information.
 
-Independent controls reported in the 2026-09-08 audit:
+Cold-audit controls on that historical test reported:
 
-- Persistence baseline: ~94.9% precision / ~94.9% recall
-- β-only baseline: 100% precision / 39.0% recall
+- Persistence: ~94.9% precision / ~94.9% recall
+- β-only: 100% precision / 39.0% recall
 - Published κ: 100% precision / ~25–27% recall
 
-So β-only strictly dominated the published κ signal on this test, and persistence dominated both on combined precision/recall.
+Historical terminal:
 
-**Correct public state:**
+```text
+REPRODUCIBLE_CODE__CIRCULAR_TARGET__DOMINATED_BY_TRIVIAL_BASELINES__NO_INDEPENDENT_PREDICTIVE_CONTENT_DEMONSTRATED
+```
 
-`REPRODUCIBLE_CODE__CIRCULAR_TARGET__DOMINATED_BY_TRIVIAL_BASELINES__NO_INDEPENDENT_PREDICTIVE_CONTENT_DEMONSTRATED`
+---
+
+## KFIN-v2 first confirmatory receipt
+
+**Experiment:** `KFIN-V2-20260908-001`  
+**GitHub Actions run:** `34243432146`  
+**Frozen execution commit:** `480933cf6e339dc85dba93edf9bb24e91433c7d5`  
+**Receipt:** `receipts/KFIN-V2-20260908-001.json`
+
+Admitted rows:
+
+- Training: 3,453
+- Held-out test: 529
+- Positive future-volatility targets: 59
+- Test prevalence: 11.15%
+
+Held-out average precision:
+
+| Score | Average precision |
+|---|---:|
+| β-only | 0.2383 |
+| β × D (ρ ablated) | 0.3114 |
+| β / ρ (D ablated) | 0.2970 |
+| **κ = βD/ρ** | **0.3859** |
+| Persistence | 0.2200 |
+
+All five preregistered pass conditions were true: κ exceeded β-only, both ablations, and persistence on average precision, while target/split integrity checks passed.
+
+At the frozen q95 alert threshold, κ produced:
+
+- Precision: 68.75%
+- Recall: 18.64%
+- F1: 0.2933
+- Alert rate: 3.02%
+
+The result is **metric-specific rather than globally dominant**: β-only had higher ROC-AUC (0.6835 vs κ 0.6429), and persistence had higher F1 (0.3898 vs κ 0.2933). Those facts are preserved rather than hidden.
 
 ---
 
 ## κ Framework
 
-The research framework studies a normalized instability quantity
+The research framework studies
 
 ```text
 κ = (β × D) / ρ
 ```
 
-where the domain-specific meanings of amplification `β`, drift/disorder `D`, and return/repair capacity `ρ` must be frozen before validation. A scalar κ is a research hypothesis, not a universal law established by this repository.
-
-The mature research standard requires directional/transient/target-aware breakers and permits vector/matrix/operator-valued successors if scalar compression loses necessary information.
+where domain-specific meanings of amplification `β`, drift/disorder `D`, and return/repair capacity `ρ` must be frozen before validation. Scalar κ remains falsifiable; richer vector/matrix/operator-valued Return geometry remains admissible where scalar compression loses directional, transient, or target information.
 
 ---
 
-## Validation v2 Requirements
+## Validation standard from here
 
-Any future finance validation must be preregistered and satisfy all of the following before execution:
+Before stronger public validation language, the finance branch still requires:
 
-1. **Non-overlapping future target** — target data must be disjoint from feature windows (for example realized volatility over `t+1..t+20`).
-2. **Training-only thresholds** — all thresholds, normalizers, and hyperparameters are estimated from training data only.
-3. **Strong baselines** — κ must be compared with persistence, β-only, and at least one established volatility baseline under the same split and metrics.
-4. **Ablation** — `D` and `ρ` must each show positive held-out marginal value before κ receives incremental-content credit.
-5. **Frozen protocol** — target, split, metrics, thresholds, tuning rules, and failure terminals are written down before the confirmatory run.
-6. **No retry-to-win** — failures are preserved; a changed design receives a fresh experiment identity.
-7. **Calibration and uncertainty** — report precision, recall, PR-AUC / ROC-AUC where appropriate, calibration, coverage, and confidence intervals rather than a single headline metric.
-8. **Independent reconstruction** — external or independently implemented replay is required before any strong validation claim.
+1. block/bootstrap uncertainty intervals;
+2. multiple independent temporal holdouts or prospective data;
+3. stronger conventional volatility baselines such as a preregistered HAR/GARCH-family comparator;
+4. independent implementation from `VALIDATION_PROTOCOL_V2.md`;
+5. external reconstruction of the frozen receipt;
+6. transaction-cost / decision analysis only if financial action is later claimed;
+7. no retry-to-win under consumed experiment identities.
 
-See `VALIDATION_PROTOCOL_V2.md` and `kappa_validation_v2.py`.
+See:
 
----
-
-## Repository Structure
-
-```text
-kappa_analysis.py          # historical S&P experiment; retained for reproducibility
-kappa_validation_v2.py    # clean v2 preregistered test harness
-VALIDATION_PROTOCOL_V2.md # passing conditions and experiment contract
-VALIDATION_AUDIT.md       # audit ledger / historical adverse findings
-RESULTS.md                # current evidence summary
-api_server.py             # experimental API surface
-```
-
-Historical artifacts remain available for reproducibility. They must not be cited as current validation after the 2026-09-08 adverse audit.
+- `VALIDATION_PROTOCOL_V2.md`
+- `kappa_validation_v2.py`
+- `VALIDATION_AUDIT.md`
+- `RESULTS.md`
+- `receipts/KFIN-V2-20260908-001.json`
 
 ---
 
 ## Public-use / Funding / Legal Guardrail
 
-Do **not** cite the retired S&P 500 `100% precision`, `+88.32% improvement`, or `validated` language in funding, outreach, legal, patent, licensing, investor, or customer materials.
+Do **not** cite the retired historical `100% precision`, `+88.32% improvement`, or March `validated` language as current evidence.
 
-Any future claim must cite the exact experiment identity, code revision, data split, baselines, metrics, and current claim ceiling.
+The strongest current public finance statement is narrower:
 
----
+> A preregistered non-overlapping future-volatility test produced a bounded incremental-content PASS on its frozen average-precision criterion; stronger conventional baselines, uncertainty analysis, repeated holdouts, and independent reconstruction remain open.
 
-## License
-
-Repository licensing and third-party dependency compliance should be reviewed before external commercialization or proposal use.
+No investment advice or production trading claim is made.
 
 ---
 
@@ -108,4 +141,4 @@ Alexander Liantonio
 
 ---
 
-**Research principle:** maximize the claim target; credit only what the receipts earn.
+**Research principle:** reproduce the number, attack the interpretation, preserve the scar, and let the successor earn its own claim.
