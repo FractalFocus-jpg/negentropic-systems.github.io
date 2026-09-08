@@ -1,0 +1,95 @@
+{
+  "claim_ceiling": "Bounded finance incremental-content candidate only; no universal-kappa, causal, investment-suitability, or cross-domain claim.",
+  "counts": {
+    "test_positive_targets": 59,
+    "test_rows": 529,
+    "test_target_prevalence": 0.11153119092627599,
+    "train_rows": 3453
+  },
+  "experiment_id": "KFIN-V2-20260908-001",
+  "integrity": {
+    "declared_feature_target_nonoverlap": true,
+    "feature_date_split_valid": true,
+    "target_end_after_feature_date": true,
+    "thresholds_training_only": true,
+    "training_targets_end_before_test_start": true
+  },
+  "parameters": {
+    "alert_quantile": 0.95,
+    "feature_vol_window": 20,
+    "future_horizon": 20,
+    "rho_epsilon": 0.001,
+    "target_quantile": 0.8,
+    "test_start": "2024-01-01",
+    "trend_window": 50
+  },
+  "pass_conditions": {
+    "kappa_gt_beta_ap": true,
+    "kappa_gt_no_D_ablation_ap": true,
+    "kappa_gt_no_rho_ablation_ap": true,
+    "kappa_gt_persistence_ap": true,
+    "target_integrity": true
+  },
+  "protocol": "VALIDATION_PROTOCOL_V2.md",
+  "results": {
+    "beta": {
+      "alert_rate": 0.043478260869565216,
+      "alerts": 23,
+      "average_precision": 0.23826750192641422,
+      "f1": 0.1951219512195122,
+      "precision": 0.34782608695652173,
+      "recall": 0.13559322033898305,
+      "roc_auc": 0.683483591777858,
+      "training_alert_threshold": 0.29645517491543455
+    },
+    "beta_D": {
+      "alert_rate": 0.026465028355387523,
+      "alerts": 14,
+      "average_precision": 0.31138390804826377,
+      "f1": 0.2465753424657534,
+      "precision": 0.6428571428571429,
+      "recall": 0.15254237288135594,
+      "roc_auc": 0.6268662098809954,
+      "training_alert_threshold": 0.016510863340139216
+    },
+    "beta_over_rho": {
+      "alert_rate": 0.045368620037807186,
+      "alerts": 24,
+      "average_precision": 0.29695966130673324,
+      "f1": 0.21686746987951808,
+      "precision": 0.375,
+      "recall": 0.15254237288135594,
+      "roc_auc": 0.6732059141723765,
+      "training_alert_threshold": 0.37000848214061294
+    },
+    "kappa": {
+      "alert_rate": 0.030245746691871456,
+      "alerts": 16,
+      "average_precision": 0.3859100499380109,
+      "f1": 0.29333333333333333,
+      "precision": 0.6875,
+      "recall": 0.1864406779661017,
+      "roc_auc": 0.6428777497295348,
+      "training_alert_threshold": 0.020682423612221393
+    },
+    "persistence": {
+      "alert_rate": 0.11153119092627599,
+      "alerts": 59,
+      "average_precision": 0.22002075539425744,
+      "f1": 0.3898305084745763,
+      "precision": 0.3898305084745763,
+      "recall": 0.3898305084745763,
+      "training_threshold": 0.19696579040212642
+    }
+  },
+  "terminal": "INCREMENTAL_KAPPA_CONTENT_PASS",
+  "training_target_threshold": 0.19696579040212642,
+  "custody": {
+    "workflow_run_id": 34243432146,
+    "workflow_head_sha": "480933cf6e339dc85dba93edf9bb24e91433c7d5",
+    "artifact_id": 10062961206,
+    "artifact_zip_sha256": "98f51bc17ab6b04a39a1d4dc06832dc5d6ab326abd62b0925d9ce69f1f634bc2",
+    "receipt_sha256": "40f325b1758eeeed465b57c2bdf85465aea591c0af4dd16a4cb3a8a427d8e3de",
+    "console_sha256": "3c0d03629689bef51ab2af2d5ef3e4d92209f53254f733d9f8eb27514a700af1"
+  }
+}
