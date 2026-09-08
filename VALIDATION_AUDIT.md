@@ -3,8 +3,8 @@
 
 **Last updated:** 2026-09-08  
 **Historical March terminal:** adverse / invalidated validation  
-**KFIN-V2-20260908-001:** raw PASS preserved, controlling terminal = PROCEDURAL FAIL  
-**Fresh valid successor:** `KFIN-V2_1-20260908-002`
+**KFIN-V2-20260908-001:** raw PASS preserved; controlling terminal = PROCEDURAL FAIL  
+**KFIN-V2_1-20260908-002:** valid first terminal = `INCREMENTAL_KAPPA_CONTENT_PASS` with bounded claim ceiling
 
 ---
 
@@ -26,98 +26,159 @@ This terminal is immutable.
 
 ---
 
-## B. KFIN-V2-20260908-001 redesign
+## B. KFIN-V2-20260908-001 — redesigned but procedurally invalid
 
-The first redesign correctly introduced:
+The first redesign correctly introduced a non-overlapping future-volatility target, training-only thresholds, persistence and β-only comparators, D/ρ ablations, and frozen AP pass conditions.
 
-- future non-overlapping t+1..t+20 volatility target;
-- training-only target threshold;
-- training-only score thresholds;
-- train/test target-window separation;
-- persistence and β-only comparators;
-- β×D and β/ρ ablations;
-- frozen average-precision pass conditions;
-- first-terminal/no-retry policy.
+Its raw workflow emitted `INCREMENTAL_KAPPA_CONTENT_PASS`, but post-run Codex review found:
 
-Raw run custody:
+- persistence used a separately recomputed β q80 rather than the exact frozen training target q80 named by the protocol;
+- local `Path.write_text` could overwrite a first receipt.
 
-- Workflow run: `34243432146`
-- Execution commit: `480933cf6e339dc85dba93edf9bb24e91433c7d5`
-- Artifact: `10062961206`
-- Artifact ZIP SHA-256: `98f51bc17ab6b04a39a1d4dc06832dc5d6ab326abd62b0925d9ce69f1f634bc2`
-- Receipt SHA-256: `40f325b1758eeeed465b57c2bdf85465aea591c0af4dd16a4cb3a8a427d8e3de`
-- Console SHA-256: `3c0d03629689bef51ab2af2d5ef3e4d92209f53254f733d9f8eb27514a700af1`
-
-Raw AP values:
-
-- β: 0.2383
-- β×D: 0.3114
-- β/ρ: 0.2970
-- κ: 0.3859
-- persistence: 0.2200
-
-The workflow emitted `INCREMENTAL_KAPPA_CONTENT_PASS`.
-
----
-
-## C. Post-run Codex review — adverse procedural findings
-
-### C1. Persistence threshold mismatch
-
-The preregistered protocol defined persistence against the training **target threshold**. The implementation instead recalculated q80 from `train["beta"]`.
-
-Both thresholds happened to equal `0.19696579040212642` in this dataset, so this defect did not numerically alter the raw persistence predictions. The protocol/implementation mismatch still prevents a valid confirmatory PASS.
-
-### C2. Receipt overwrite weakness
-
-The implementation used `Path.write_text`, which can truncate an existing receipt on repeat local execution. This violated structural enforcement of first-terminal preservation, even though the GitHub artifact from the first run remains separately preserved and hash-bound.
-
-### Controlling adjudication
+The two q80 values happened to be numerically equal, but frozen methodology is part of the experiment. Controlling terminal:
 
 ```text
 PROCEDURAL_FAIL__PERSISTENCE_BASELINE_IMPLEMENTATION_MISMATCH__RAW_RECEIPT_PRESERVED
 ```
 
-The raw workflow terminal is diagnostic only and may not be cited as a valid confirmatory success.
-
-Adjudication file:
-
-`adjudications/KFIN-V2-20260908-001.md`
+Raw V2 custody remains preserved in `receipts/KFIN-V2-20260908-001.json` and `adjudications/KFIN-V2-20260908-001.md`.
 
 ---
 
-## D. Fresh successor requirements — KFIN-V2_1-20260908-002
+## C. KFIN-V2_1-20260908-002 — fresh one-use successor
 
-The fresh successor must:
+### C1. Pre-execution corrections
 
-1. use the exact frozen target threshold for persistence;
-2. preserve the V2 scientific target/split/scores/metrics/pass rule unless separately preregistered otherwise;
-3. write a scientific receipt with create-only/exclusive semantics;
-4. write implementation errors separately and never overwrite a scientific receipt;
-5. reject GitHub Actions rerun attempts (`GITHUB_RUN_ATTEMPT > 1`) for the same run identity;
-6. preserve predecessor raw receipt + procedural adjudication as immutable ancestry;
-7. undergo automated code review before confirmatory merge/execution;
-8. use a fresh experiment ID and first terminal.
+V2.1 preserved the V2 scientific target/split/score/metric/pass semantics and corrected execution fidelity before confirmatory execution:
 
-Only after these gates close may a new scientific terminal be considered.
+- persistence uses the exact already-computed training target q80;
+- scientific/error/refusal receipts are create-only and mutually exclusive;
+- any pre-existing local terminal consumes the checkout identity;
+- only `GITHUB_ACTIONS=true`, the exact repository, `push`, `refs/heads/main`, run attempt exactly `1`, and nonempty run ID/SHA/token are admitted;
+- live `main` is queried before analysis for durable prior consumption;
+- matching executions are serialized by a fixed concurrency group;
+- the workflow automatically persists the exact first scientific/error terminal to the canonical live-main receipt path before completion;
+- the canonical receipt path is excluded from workflow triggers;
+- all material Codex code-review findings were resolved before merge.
+
+PR #3 merged at commit:
+
+`b9698649469a36921fc9c0f82190747467bf36cf`
+
+### C2. Execution
+
+GitHub Actions run `34246951669`, attempt `1`, completed successfully. Every workflow step passed, including:
+
+- frozen environment setup;
+- one-use confirmatory execution;
+- artifact upload;
+- durable canonical receipt persistence;
+- terminal-class adjudication.
+
+Canonical receipt:
+
+`receipts/KFIN-V2_1-20260908-002.json`
+
+### C3. Custody
+
+Artifact ID: `10064382539`
+
+- Artifact ZIP SHA-256: `d5bdd3478284ec42f086824899bec1040545a132019daaa853c361499fedc675`
+- Scientific receipt SHA-256: `87ef8e803cc0a4e5420b09b4d4a4965608e363429c00dcb15e731fd34f3e3468`
+- Console SHA-256: `2a88c149f92cea163b13fc990a09f4f41c44906d58883385e601418e1dd27014`
+
+Receipt source-custody hashes:
+
+- dataset: `30c8b42de4a4cf47b1c67d5117740024ef3a94092df2a0eba0ee906b929d90fc`
+- protocol: `afdd7ac526512225e648e9798b353c72099eeb05d3cc95f89a1c1e15bb09399f`
+- script: `9df32657be214aa762fbea25a6663c2c7b3c3a3f427c52ba1b00fff184997bfb`
+
+### C4. Integrity
+
+All receipt integrity gates are `true`:
+
+- feature-date split valid;
+- feature/target order non-overlap;
+- persistence uses exact target threshold;
+- thresholds training-only;
+- training targets end before test start.
+
+Counts:
+
+- train rows: 3,453
+- test rows: 529
+- positive test targets: 59
+- prevalence: 11.153%
+
+### C5. Results
+
+| Score | AP | ROC-AUC | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|
+| β | 0.2383 | **0.6835** | 0.3478 | 0.1356 | 0.1951 |
+| β×D | 0.3114 | 0.6269 | 0.6429 | 0.1525 | 0.2466 |
+| β/ρ | 0.2970 | 0.6732 | 0.3750 | 0.1525 | 0.2169 |
+| **κ** | **0.3859** | 0.6429 | **0.6875** | 0.1864 | 0.2933 |
+| Persistence | 0.2200* | — | 0.3898 | **0.3898** | **0.3898** |
+
+`*` persistence AP uses its frozen binary score.
+
+All five preregistered AP/integrity conditions passed.
+
+### C6. Valid first terminal
+
+```text
+INCREMENTAL_KAPPA_CONTENT_PASS
+```
+
+This is the first scientifically admissible terminal for the redesigned finance experiment lineage.
 
 ---
 
-## E. Public / funding / legal state
+## D. Claim ceiling and mixed-metric firewall
 
-Do not cite as current evidence:
+The PASS establishes only bounded incremental ranking content on the exact frozen V2.1 held-out average-precision criterion.
 
-- March `100% precision validated`;
-- `+88.32% improvement`;
-- KFIN-V2 raw `INCREMENTAL_KAPPA_CONTENT_PASS`.
+It does not establish global metric dominance:
 
-Current permitted statement:
+- β ROC-AUC exceeded κ ROC-AUC;
+- persistence F1 and recall exceeded κ F1 and recall;
+- κ recall at its frozen q95 alert threshold was 18.64%.
 
-> The historical finance validation failed independent audit. A redesigned run produced promising raw ranking results, but post-run code review found a protocol implementation mismatch; that run is preserved as a procedural failure while a corrected fresh successor is prepared.
+It does not establish universal κ, causal finance mechanism, general alpha, investment suitability, production trading readiness, or cross-domain universality.
 
 ---
 
-## F. Other domain states
+## E. Public / funding / legal currentness
+
+Retired permanently from the March experiment:
+
+- `100% precision validated`;
+- `+88.32% improvement vs baseline`;
+- `Validation: SUCCESS` as evidence of independent κ prediction;
+- claims that the old hold-out construction itself prevented leakage/circularity.
+
+The raw V2 PASS also remains noncontrolling because its procedural failure is immutable.
+
+Permitted current sentence:
+
+> A code-reviewed, preregistered, one-use successor using a non-overlapping future-volatility target produced a bounded incremental-content PASS on its frozen held-out average-precision criterion; stronger conventional baselines, uncertainty analysis, repeated holdouts, and independent reconstruction remain open.
+
+---
+
+## F. Next-proof requirements
+
+1. block/bootstrap uncertainty intervals;
+2. independent temporal holdouts and/or prospective data;
+3. preregistered HAR/GARCH-family or equivalently strong conventional volatility baselines;
+4. clean-room independent implementation from the protocol;
+5. external reconstruction of source hashes, workflow, artifact and canonical receipt;
+6. calibration and decision-utility analysis before any financial-action claim;
+7. transaction-cost-aware evaluation only if trading utility is later claimed;
+8. preserve every first adverse terminal and mixed metric without selective reporting.
+
+---
+
+## G. Other domain states
 
 - VIX: underperforming historical diagnostic; not validated.
 - Solar: monitoring/data pipeline only; predictive validation open.
@@ -127,4 +188,4 @@ Current permitted statement:
 
 ---
 
-**Audit law:** no result becomes stronger because its bug was numerically harmless on one dataset. Frozen methodology is part of the experiment.
+**Audit law:** reproducibility is not validity; a successor may earn a new result, but it never repairs the scar that forced its creation.
