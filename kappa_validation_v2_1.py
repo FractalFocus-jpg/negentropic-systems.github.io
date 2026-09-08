@@ -51,6 +51,11 @@ REFUSAL_RECEIPT_PATH = Path("validation_v2_1_refusal_receipt.json")
 CANONICAL_REPO_RECEIPT = Path("receipts/KFIN-V2_1-20260908-002.json")
 PROTOCOL_PATH = Path("VALIDATION_PROTOCOL_V2_1.md")
 SCRIPT_PATH = Path(__file__).resolve()
+LOCAL_TERMINAL_PATHS = (
+    SCIENTIFIC_RECEIPT_PATH,
+    ERROR_RECEIPT_PATH,
+    REFUSAL_RECEIPT_PATH,
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -118,6 +123,14 @@ def remote_canonical_receipt_exists(token: str) -> bool:
 
 def enforce_one_use_preflight() -> None:
     """Admit only the declared first GitHub Actions push executor."""
+    # Any prior local scientific, implementation-error, or refusal terminal
+    # consumes this checkout. Never create a second terminal beside it.
+    preexisting = [str(path) for path in LOCAL_TERMINAL_PATHS if path.exists()]
+    if preexisting:
+        raise RuntimeError(
+            "local terminal already exists; identity consumed: " + ", ".join(preexisting)
+        )
+
     attempt_text = os.getenv("GITHUB_RUN_ATTEMPT")
     token = os.getenv("GITHUB_TOKEN")
 
@@ -150,8 +163,6 @@ def enforce_one_use_preflight() -> None:
 
     if CANONICAL_REPO_RECEIPT.exists():
         reasons.append(f"checkout already contains canonical receipt: {CANONICAL_REPO_RECEIPT}")
-    if SCIENTIFIC_RECEIPT_PATH.exists():
-        reasons.append(f"local scientific receipt already exists: {SCIENTIFIC_RECEIPT_PATH}")
 
     # Only query live main after the executor context itself is authenticated.
     if not reasons and token and remote_canonical_receipt_exists(token):
@@ -159,10 +170,7 @@ def enforce_one_use_preflight() -> None:
 
     if reasons:
         payload = refusal_payload("; ".join(reasons))
-        try:
-            write_json_exclusive(REFUSAL_RECEIPT_PATH, payload)
-        except FileExistsError:
-            pass
+        write_json_exclusive(REFUSAL_RECEIPT_PATH, payload)
         raise RuntimeError(payload["reason"])
 
 
@@ -397,39 +405,40 @@ def main() -> int:
         print(f"\nCreated {SCIENTIFIC_RECEIPT_PATH} exclusively")
         return 0
     except Exception as exc:
-        # A refusal is already a complete terminal for this invocation. Do not
-        # create a second implementation-error receipt for the same event.
-        if REFUSAL_RECEIPT_PATH.exists():
-            try:
-                print(REFUSAL_RECEIPT_PATH.read_text(encoding="utf-8"), file=sys.stderr)
-            except OSError:
-                print(f"Repeat/unauthorized executor refused: {exc}", file=sys.stderr)
-            return 2
-
-        # Never overwrite a scientific terminal. If one already exists, report
-        # the later exception to stderr only. Otherwise create a separate error
-        # receipt exactly once.
-        if not SCIENTIFIC_RECEIPT_PATH.exists():
-            error_payload = {
-                "experiment_id": EXPERIMENT_ID,
-                "parent_experiment_id": PARENT_EXPERIMENT_ID,
-                "terminal": "IMPLEMENTATION_OR_DATA_ERROR_BEFORE_SCIENTIFIC_TERMINAL",
-                "error_type": type(exc).__name__,
-                "error": str(exc),
-                "github_run_id": os.getenv("GITHUB_RUN_ID"),
-                "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
-                "github_sha": os.getenv("GITHUB_SHA"),
-            }
-            try:
-                write_json_exclusive(ERROR_RECEIPT_PATH, error_payload)
-            except FileExistsError:
-                pass
-            print(json.dumps(error_payload, indent=2, sort_keys=True), file=sys.stderr)
-        else:
+        # If any terminal already exists, it is controlling for this checkout.
+        # Never create a second receipt beside it.
+        existing = [path for path in LOCAL_TERMINAL_PATHS if path.exists()]
+        if existing:
             print(
-                f"Post-terminal exception preserved without overwrite: {type(exc).__name__}: {exc}",
+                "Execution refused/terminated with existing receipt(s): "
+                + ", ".join(str(path) for path in existing),
                 file=sys.stderr,
             )
+            for path in existing:
+                try:
+                    print(path.read_text(encoding="utf-8"), file=sys.stderr)
+                except OSError:
+                    pass
+            return 2
+
+        # No terminal exists yet, so this is a first implementation/data error.
+        error_payload = {
+            "experiment_id": EXPERIMENT_ID,
+            "parent_experiment_id": PARENT_EXPERIMENT_ID,
+            "terminal": "IMPLEMENTATION_OR_DATA_ERROR_BEFORE_SCIENTIFIC_TERMINAL",
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+            "github_run_id": os.getenv("GITHUB_RUN_ID"),
+            "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
+            "github_sha": os.getenv("GITHUB_SHA"),
+        }
+        try:
+            write_json_exclusive(ERROR_RECEIPT_PATH, error_payload)
+        except FileExistsError:
+            # A concurrent/local race created a terminal between the existence
+            # check and exclusive create. Do not overwrite it.
+            pass
+        print(json.dumps(error_payload, indent=2, sort_keys=True), file=sys.stderr)
         return 2
 
 
