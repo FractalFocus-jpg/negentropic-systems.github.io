@@ -1,0 +1,93 @@
+name: Kappa Validation v2.1 One-Use Confirmatory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'VALIDATION_PROTOCOL_V2_1.md'
+      - 'kappa_validation_v2_1.py'
+      - '.github/workflows/kappa-validation-v2-1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kfin-v2-1-one-use-confirmatory
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up frozen Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.16'
+          cache: 'pip'
+
+      - name: Install frozen analysis dependencies
+        run: |
+          python -m pip install --upgrade pip==26.2.1
+          python -m pip install pandas==3.0.5 numpy==2.4.6 scikit-learn==1.9.0
+
+      - name: Run KFIN-v2.1 once
+        id: validation
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python kappa_validation_v2_1.py 2>&1 | tee validation_v2_1_console.log
+
+      - name: Upload first-terminal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kappa-validation-v2-1-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: |
+            validation_v2_1_receipt.json
+            validation_v2_1_error_receipt.json
+            validation_v2_1_refusal_receipt.json
+            validation_v2_1_console.log
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: false
+
+      - name: Adjudicate execution class
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          scientific = Path('validation_v2_1_receipt.json')
+          error = Path('validation_v2_1_error_receipt.json')
+          refusal = Path('validation_v2_1_refusal_receipt.json')
+
+          existing = [p for p in (scientific, error, refusal) if p.exists()]
+          print('receipt files:', [str(p) for p in existing])
+
+          if len(existing) != 1:
+              raise SystemExit(f'exactly one terminal receipt required; found {len(existing)}')
+          if refusal.exists():
+              print(refusal.read_text())
+              raise SystemExit('repeat/consumed identity refused')
+          if error.exists():
+              print(error.read_text())
+              raise SystemExit('implementation/data error before scientific terminal')
+
+          receipt = json.loads(scientific.read_text())
+          terminal = receipt.get('terminal')
+          print('scientific terminal:', terminal)
+          if terminal not in {
+              'INCREMENTAL_KAPPA_CONTENT_PASS',
+              'NO_INCREMENTAL_KAPPA_CONTENT_ON_FROZEN_TEST',
+          }:
+              raise SystemExit(f'unrecognized scientific terminal: {terminal!r}')
+          if receipt.get('experiment_id') != 'KFIN-V2_1-20260908-002':
+              raise SystemExit('experiment identity mismatch')
+          PY
