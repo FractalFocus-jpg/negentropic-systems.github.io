@@ -1,0 +1,10 @@
+{
+  "analysis_id": "KFIN-S38-F1-20260908-001",
+  "data_sha256": "30c8b42de4a4cf47b1c67d5117740024ef3a94092df2a0eba0ee906b929d90fc",
+  "github_run_id": "34254713714",
+  "github_sha": "de5ecd9b9c1748d35c148260f3ec3d5d46671a68",
+  "parent_receipt_sha256": "87ef8e803cc0a4e5420b09b4d4a4965608e363429c00dcb15e731fd34f3e3468",
+  "protocol_sha256": "faec6b247ea9ac1d3dd20933889471e1a7e4ba31e7b6f5f7bc403ddd1df766f1",
+  "script_sha256": "e321db58475054a22e15709107f392299898818b14eabdb5a6c41c4ba8ee92c3",
+  "status": "RESERVED_BEFORE_ANALYSIS"
+}
