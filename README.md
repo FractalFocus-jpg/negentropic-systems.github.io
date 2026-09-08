@@ -1,7 +1,7 @@
 # KappaRisk Validation Platform
 ## κ-Stability Research and Audit Harness
 
-**Current public status (2026-09-08): validation claims under correction after independent cold audit.**
+**Current public status (2026-09-08): validation claims corrected after independent cold audit.**
 
 The repository remains reproducible as code, but the original S&P 500 validation claim has been retired. An independent cold audit (Claude/Rhythm, 2026-09-08) reproduced the published 100% precision / 25% recall numbers and then identified target circularity, an inappropriate prevalence/random baseline, and test-label leakage. The published S&P experiment therefore does **not** demonstrate independent predictive value for κ.
 
