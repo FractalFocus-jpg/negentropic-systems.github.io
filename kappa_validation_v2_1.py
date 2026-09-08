@@ -15,6 +15,9 @@ import json
 import math
 import os
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +33,9 @@ from sklearn.metrics import (
 
 EXPERIMENT_ID = "KFIN-V2_1-20260908-002"
 PARENT_EXPERIMENT_ID = "KFIN-V2-20260908-001"
+EXPECTED_REPOSITORY = "FractalFocus-jpg/negentropic-systems.github.io"
+EXPECTED_EVENT = "push"
+EXPECTED_REF = "refs/heads/main"
 TEST_START = pd.Timestamp("2024-01-01")
 FEATURE_VOL_WINDOW = 20
 TREND_WINDOW = 50
@@ -69,28 +75,87 @@ def refusal_payload(reason: str) -> dict:
     return {
         "experiment_id": EXPERIMENT_ID,
         "parent_experiment_id": PARENT_EXPERIMENT_ID,
-        "terminal": "REPEAT_OR_CONSUMED_IDENTITY_REFUSED",
+        "terminal": "REPEAT_OR_UNAUTHORIZED_EXECUTOR_REFUSED",
         "reason": reason,
+        "github_repository": os.getenv("GITHUB_REPOSITORY"),
+        "github_event_name": os.getenv("GITHUB_EVENT_NAME"),
+        "github_ref": os.getenv("GITHUB_REF"),
         "github_run_id": os.getenv("GITHUB_RUN_ID"),
-        "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT", "1"),
+        "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
         "github_sha": os.getenv("GITHUB_SHA"),
     }
 
 
-def enforce_one_use_preflight() -> None:
-    attempt_text = os.getenv("GITHUB_RUN_ATTEMPT", "1")
+def remote_canonical_receipt_exists(token: str) -> bool:
+    """Check live main, not the triggering checkout, for durable consumption."""
+    encoded_path = urllib.parse.quote(str(CANONICAL_REPO_RECEIPT), safe="/")
+    url = (
+        f"https://api.github.com/repos/{EXPECTED_REPOSITORY}/contents/"
+        f"{encoded_path}?ref=main"
+    )
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "kfin-v2-1-one-use-guard",
+        },
+        method="GET",
+    )
     try:
-        attempt = int(attempt_text)
-    except ValueError as exc:
-        raise RuntimeError(f"Invalid GITHUB_RUN_ATTEMPT={attempt_text!r}") from exc
+        with urllib.request.urlopen(request, timeout=20) as response:
+            if response.status == 200:
+                return True
+            raise RuntimeError(f"Unexpected GitHub guard HTTP status {response.status}")
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return False
+        raise RuntimeError(f"GitHub durable-guard query failed with HTTP {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"GitHub durable-guard query failed: {exc.reason}") from exc
+
+
+def enforce_one_use_preflight() -> None:
+    """Admit only the declared first GitHub Actions push executor."""
+    attempt_text = os.getenv("GITHUB_RUN_ATTEMPT")
+    token = os.getenv("GITHUB_TOKEN")
 
     reasons: list[str] = []
-    if attempt > 1:
-        reasons.append(f"GitHub Actions run attempt is {attempt}; only attempt 1 is admitted")
+    if os.getenv("GITHUB_ACTIONS") != "true":
+        reasons.append("GITHUB_ACTIONS=true is required")
+    if os.getenv("GITHUB_REPOSITORY") != EXPECTED_REPOSITORY:
+        reasons.append(f"repository must be {EXPECTED_REPOSITORY}")
+    if os.getenv("GITHUB_EVENT_NAME") != EXPECTED_EVENT:
+        reasons.append(f"event must be {EXPECTED_EVENT}")
+    if os.getenv("GITHUB_REF") != EXPECTED_REF:
+        reasons.append(f"ref must be {EXPECTED_REF}")
+    if not os.getenv("GITHUB_RUN_ID"):
+        reasons.append("GITHUB_RUN_ID is required")
+    if not os.getenv("GITHUB_SHA"):
+        reasons.append("GITHUB_SHA is required")
+    if not token:
+        reasons.append("GITHUB_TOKEN is required for durable consumption check")
+
+    attempt: int | None = None
+    if attempt_text is None:
+        reasons.append("GITHUB_RUN_ATTEMPT is required")
+    else:
+        try:
+            attempt = int(attempt_text)
+        except ValueError:
+            reasons.append(f"GITHUB_RUN_ATTEMPT must be an integer, got {attempt_text!r}")
+    if attempt is not None and attempt != 1:
+        reasons.append(f"run attempt must be 1, got {attempt}")
+
     if CANONICAL_REPO_RECEIPT.exists():
-        reasons.append(f"canonical receipt already exists: {CANONICAL_REPO_RECEIPT}")
+        reasons.append(f"checkout already contains canonical receipt: {CANONICAL_REPO_RECEIPT}")
     if SCIENTIFIC_RECEIPT_PATH.exists():
         reasons.append(f"local scientific receipt already exists: {SCIENTIFIC_RECEIPT_PATH}")
+
+    # Only query live main after the executor context itself is authenticated.
+    if not reasons and token and remote_canonical_receipt_exists(token):
+        reasons.append(f"live main already contains canonical receipt: {CANONICAL_REPO_RECEIPT}")
 
     if reasons:
         payload = refusal_payload("; ".join(reasons))
@@ -311,7 +376,7 @@ def run_confirmatory() -> dict:
             "numpy": np.__version__,
             "scikit_learn": sklearn.__version__,
             "github_run_id": os.getenv("GITHUB_RUN_ID"),
-            "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT", "1"),
+            "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
             "github_sha": os.getenv("GITHUB_SHA"),
         },
         "source_custody": {
@@ -338,7 +403,7 @@ def main() -> int:
             try:
                 print(REFUSAL_RECEIPT_PATH.read_text(encoding="utf-8"), file=sys.stderr)
             except OSError:
-                print(f"Repeat/consumed identity refused: {exc}", file=sys.stderr)
+                print(f"Repeat/unauthorized executor refused: {exc}", file=sys.stderr)
             return 2
 
         # Never overwrite a scientific terminal. If one already exists, report
@@ -352,7 +417,7 @@ def main() -> int:
                 "error_type": type(exc).__name__,
                 "error": str(exc),
                 "github_run_id": os.getenv("GITHUB_RUN_ID"),
-                "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT", "1"),
+                "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
                 "github_sha": os.getenv("GITHUB_SHA"),
             }
             try:
