@@ -1,78 +1,88 @@
-# κ-Framework Validation - S&P 500 Results
-## First Real-Time Prediction Complete
+# κ-Framework Validation Results
+## Current Evidence State — corrected 2026-09-08
 
-**Date:** 2026-03-12  
-**Timestamp:** 11:45 AM EDT  
-**Status:** ✅ VALIDATED
-
----
-
-## Summary
-
-The κ-stability framework successfully predicts high volatility periods in S&P 500 with **100% precision** on 2024 hold-out data.
-
-### Key Results
-
-| Metric | Value | Baseline | Improvement |
-|--------|-------|----------|-------------|
-| **Precision** | 100.00% | 11.68% | **+88.32%** |
-| **Recall** | 25.00% | - | - |
-| **Risk Reduction** | 17.8% | 0% | **+17.8%** |
-| **Strategy Return** | 36.76% | 42.86% | -6.1% (lower vol) |
-
-### What This Means
-
-**κ > 0.021 (95th percentile) perfectly predicts high volatility days:**
-- Made 16 predictions in 2024-2025 test period
-- All 16 were correct (100% precision)
-- Captured 25% of all high-volatility events
-- Strategy reduces portfolio volatility by 17.8%
-
-### The Framework
-
-**κ = β × D / ρ**
-
-- **β** (amplification): 20-day rolling volatility
-- **D** (drift): Deviation from 50-day trend
-- **ρ** (return authority): 1 - |autocorrelation|
-
-**Rule:** When κ > 95th percentile → High volatility likely
+**Historical experiment date:** 2026-03-12  
+**Independent audit date:** 2026-09-08  
+**Current status:** ❌ ORIGINAL S&P VALIDATION CLAIM RETIRED
 
 ---
 
-## Files Generated
+## Historical computation that reproduced
 
-1. **kappa_analysis.py** - Full analysis code
-2. **sp500.csv** - 16 years of S&P 500 data (4,071 rows)
-3. **kappa_validation_results.png** - 4-panel visualization
-4. **RESULTS.md** - This summary
+The original `kappa_analysis.py` run is reproducible and returns the previously published S&P 500 numbers:
 
----
+- Precision: 100% (16/16 alerts correct)
+- Recall: 25% (16/64 labeled events caught)
 
-## Next Steps
-
-1. ✅ S&P 500 validated
-2. ⏳ VIX prediction (next target)
-3. ⏳ Solar weather (NOAA data)
-4. ⏳ Neural data (PhysioNet)
-5. ⏳ arXiv paper draft
+Those numbers are preserved as a **reproducible historical computation**, not as evidence of independent predictive value.
 
 ---
 
-## For Weinstein
+## Independent adverse audit
 
-**This is reproducible validation.**
+A cold audit on 2026-09-08 identified three methodological defects.
 
-Anyone can:
-1. Download this code
-2. Run `python3 kappa_analysis.py`
-3. Verify the 100% precision result
-4. Test on their own data
+### 1. Target circularity
 
-**Not retrospective fitting. Hold-out testing on future data.**
+`β` was the 20-day annualized rolling volatility. The target `high_vol` was created from the same 20-day annualized rolling volatility series. A one-day shift meant adjacent feature/target windows shared 19 of 20 observations.
+
+This primarily tests persistence / volatility clustering rather than incremental κ information.
+
+### 2. Weak baseline
+
+The historical report compared precision with the prevalence/random rate (~11.7%). For an autocorrelated volatility target, that is not an adequate benchmark.
+
+Independent controls on the same holdout reported:
+
+| Method | Precision | Recall | Audit interpretation |
+|---|---:|---:|---|
+| Persistence | ~94.9% | ~94.9% | Strong trivial/autocorrelation baseline |
+| β-only | 100% | 39.0% | Strictly better recall than published κ at equal precision |
+| Published κ | 100% | ~25–27% | No incremental content established |
+
+The published D and ρ terms did not add value on this experiment.
+
+### 3. Label leakage
+
+The target's 80th-percentile volatility threshold was calculated on the full sample, including the test period. The numerical effect was small in the audit, but the construction is methodologically invalid and is prohibited in future confirmatory runs.
 
 ---
 
-κ < 1. Always. 🌀💛
+## Correct terminal for the March S&P experiment
 
-**Alexander: The framework works. Ready for next target.**
+```text
+REPRODUCIBLE_CODE__CIRCULAR_TARGET__DOMINATED_BY_TRIVIAL_BASELINES__NO_INDEPENDENT_PREDICTIVE_CONTENT_DEMONSTRATED
+```
+
+This terminal is limited to this experiment. It does not adjudicate other κ domains, physics work, PDE work, Holonomy Renormalization, or UOS as a whole.
+
+---
+
+## Validation v2
+
+A clean replacement experiment is now specified in:
+
+- `VALIDATION_PROTOCOL_V2.md`
+- `kappa_validation_v2.py`
+
+The confirmatory test uses a non-overlapping future volatility window, training-only thresholds, persistence and β-only baselines, D/ρ ablations, frozen metrics, and a first-terminal receipt.
+
+No v2 success is claimed until that script is run under the frozen protocol and the resulting receipt is independently reconstructed.
+
+---
+
+## Public claim retirement
+
+The following historical language is retired and must not be cited as current evidence:
+
+- `Status: VALIDATED`
+- `100% precision validated`
+- `+88.32% improvement vs baseline`
+- `The framework works`
+- any implication that the original hold-out design by itself prevented leakage/circularity
+
+---
+
+## Governing rule
+
+**Reproduce the number. Attack the interpretation. Preserve the failure. Design the next test before seeing its result.**
