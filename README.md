@@ -1,17 +1,19 @@
 # KappaRisk Validation Platform
 ## κ-Stability Research and Audit Harness
 
-**Current public status (2026-09-08): historical S&P validation claim retired; clean v2 incremental-content test executed with a bounded PASS.**
+**Current public status (2026-09-08): historical S&P validation retired; first clean-successor run preserved but adjudicated PROCEDURAL FAIL; corrected successor pending.**
 
-The original March S&P 500 experiment remains reproducible as code, but its validation interpretation was invalidated by a 2026-09-08 independent cold audit that found target circularity, weak baselines, and target-threshold leakage. That historical claim remains retired.
+The original March S&P experiment is reproducible as code but invalid as a validation claim because of target circularity, weak baselines, and target-threshold leakage.
 
-A new preregistered successor, `KFIN-V2-20260908-001`, was then frozen **before execution** and run on GitHub Actions with a non-overlapping 20-day future-volatility target, training-only thresholds, persistence and β-only baselines, D/ρ ablations, and an explicit first-terminal rule. It returned:
+A first redesigned successor, `KFIN-V2-20260908-001`, was preregistered and executed once. Its raw workflow output satisfied the declared average-precision comparisons, but post-run Codex review found that the implementation did not literally use the frozen persistence threshold specified in the protocol and that local receipt writing was not overwrite-safe. Under the project's first-terminal law, the raw PASS is therefore **noncontrolling**.
+
+Controlling terminal:
 
 ```text
-INCREMENTAL_KAPPA_CONTENT_PASS
+PROCEDURAL_FAIL__PERSISTENCE_BASELINE_IMPLEMENTATION_MISMATCH__RAW_RECEIPT_PRESERVED
 ```
 
-This means only that full κ beat the preregistered comparison scores on the protocol's held-out **average-precision** criterion. It is not a universal-κ result, financial-alpha proof, investment recommendation, causal result, or production-readiness claim.
+The fresh corrected successor is `KFIN-V2_1-20260908-002`. It must be code-reviewed before execution and may not rewrite or rerun the consumed V2 identity.
 
 ---
 
@@ -19,7 +21,7 @@ This means only that full κ beat the preregistered comparison scores on the pro
 
 | Domain | Current state | Public claim ceiling |
 |---|---|---|
-| S&P 500 | Historical test invalidated; KFIN-v2 bounded incremental-content PASS | Candidate incremental finance signal; external reconstruction and stronger baselines still required |
+| S&P 500 | Historical test invalidated; KFIN-v2 raw result procedurally invalid; V2.1 pending | No current validated κ finance claim |
 | VIX | Underperforming diagnostic | Not validated |
 | Solar | Monitoring / data pipeline | Prediction accuracy not yet validated |
 | Neural / EEG | Simulation + literature comparator | Real-data validation pending |
@@ -28,21 +30,9 @@ This means only that full κ beat the preregistered comparison scores on the pro
 
 ---
 
-## Why the historical claim was retired
+## Historical S&P adverse audit
 
-The March script used:
-
-- `β` = 20-day annualized rolling volatility
-- target `high_vol` = the same 20-day annualized rolling volatility thresholded at the 80th percentile
-- prediction = previous-day κ signal
-
-Adjacent feature/target windows therefore shared 19 of 20 observations. The computation reproduced, but the test did not isolate independent κ information.
-
-Cold-audit controls on that historical test reported:
-
-- Persistence: ~94.9% precision / ~94.9% recall
-- β-only: 100% precision / 39.0% recall
-- Published κ: 100% precision / ~25–27% recall
+The March script used the same 20-day rolling-volatility series for β and for construction of the `high_vol` target, with adjacent windows sharing 19/20 observations. It also compared against an inadequate prevalence/random baseline and computed the target threshold on the full sample.
 
 Historical terminal:
 
@@ -50,42 +40,31 @@ Historical terminal:
 REPRODUCIBLE_CODE__CIRCULAR_TARGET__DOMINATED_BY_TRIVIAL_BASELINES__NO_INDEPENDENT_PREDICTIVE_CONTENT_DEMONSTRATED
 ```
 
+That failure remains immutable.
+
 ---
 
-## KFIN-v2 first confirmatory receipt
+## KFIN-v2 raw run — preserved, not promoted
 
 **Experiment:** `KFIN-V2-20260908-001`  
-**GitHub Actions run:** `34243432146`  
-**Frozen execution commit:** `480933cf6e339dc85dba93edf9bb24e91433c7d5`  
-**Receipt:** `receipts/KFIN-V2-20260908-001.json`
+**Workflow run:** `34243432146`  
+**Execution commit:** `480933cf6e339dc85dba93edf9bb24e91433c7d5`  
+**Raw receipt:** `receipts/KFIN-V2-20260908-001.json`  
+**Adjudication:** `adjudications/KFIN-V2-20260908-001.md`
 
-Admitted rows:
-
-- Training: 3,453
-- Held-out test: 529
-- Positive future-volatility targets: 59
-- Test prevalence: 11.15%
-
-Held-out average precision:
+The raw run used a non-overlapping future-volatility target and training-only thresholds. Its raw average-precision values were:
 
 | Score | Average precision |
 |---|---:|
 | β-only | 0.2383 |
-| β × D (ρ ablated) | 0.3114 |
-| β / ρ (D ablated) | 0.2970 |
-| **κ = βD/ρ** | **0.3859** |
+| β×D | 0.3114 |
+| β/ρ | 0.2970 |
+| κ = βD/ρ | 0.3859 |
 | Persistence | 0.2200 |
 
-All five preregistered pass conditions were true: κ exceeded β-only, both ablations, and persistence on average precision, while target/split integrity checks passed.
+However, post-run code review found that persistence was implemented using `train["beta"].quantile(0.8)` rather than the exact frozen `target_threshold` named by the protocol. In this dataset the two thresholds happened to be numerically equal (`0.19696579040212642`), so the raw metrics do not change numerically; the procedural mismatch still invalidates the claimed confirmatory terminal.
 
-At the frozen q95 alert threshold, κ produced:
-
-- Precision: 68.75%
-- Recall: 18.64%
-- F1: 0.2933
-- Alert rate: 3.02%
-
-The result is **metric-specific rather than globally dominant**: β-only had higher ROC-AUC (0.6835 vs κ 0.6429), and persistence had higher F1 (0.3898 vs κ 0.2933). Those facts are preserved rather than hidden.
+Codex also found that `Path.write_text` could overwrite a first receipt on local repeated execution. The GitHub artifact itself remains preserved, but the successor must use exclusive receipt creation and rerun refusal.
 
 ---
 
@@ -97,48 +76,41 @@ The research framework studies
 κ = (β × D) / ρ
 ```
 
-where domain-specific meanings of amplification `β`, drift/disorder `D`, and return/repair capacity `ρ` must be frozen before validation. Scalar κ remains falsifiable; richer vector/matrix/operator-valued Return geometry remains admissible where scalar compression loses directional, transient, or target information.
+with domain-specific definitions frozen before testing. Scalar κ remains falsifiable. No repository result currently establishes universal κ, general financial alpha, investment suitability, causal mechanism, or cross-domain universality.
 
 ---
 
-## Validation standard from here
+## Corrected successor requirements
 
-Before stronger public validation language, the finance branch still requires:
+`KFIN-V2_1-20260908-002` must:
 
-1. block/bootstrap uncertainty intervals;
-2. multiple independent temporal holdouts or prospective data;
-3. stronger conventional volatility baselines such as a preregistered HAR/GARCH-family comparator;
-4. independent implementation from `VALIDATION_PROTOCOL_V2.md`;
-5. external reconstruction of the frozen receipt;
-6. transaction-cost / decision analysis only if financial action is later claimed;
-7. no retry-to-win under consumed experiment identities.
+1. keep the same non-overlapping future target and split logic;
+2. use the exact frozen target threshold for persistence;
+3. preserve β, β×D, β/ρ and κ comparisons;
+4. keep training-only preprocessing and the frozen AP pass rule;
+5. create receipts exclusively and preserve errors separately;
+6. refuse GitHub Actions rerun attempts for the same execution identity;
+7. undergo code review before confirmatory execution;
+8. preserve any first adverse result without retry-to-win.
 
-See:
-
-- `VALIDATION_PROTOCOL_V2.md`
-- `kappa_validation_v2.py`
-- `VALIDATION_AUDIT.md`
-- `RESULTS.md`
-- `receipts/KFIN-V2-20260908-001.json`
+Even after a valid successor PASS, stronger conventional volatility baselines, uncertainty intervals, repeated holdouts/prospective data, and independent reconstruction remain required before strong public validation language.
 
 ---
 
 ## Public-use / Funding / Legal Guardrail
 
-Do **not** cite the retired historical `100% precision`, `+88.32% improvement`, or March `validated` language as current evidence.
+Do not cite:
 
-The strongest current public finance statement is narrower:
+- the March `100% precision validated` headline;
+- the historical `+88.32% improvement` claim;
+- the noncontrolling KFIN-v2 raw PASS as a valid confirmatory result.
 
-> A preregistered non-overlapping future-volatility test produced a bounded incremental-content PASS on its frozen average-precision criterion; stronger conventional baselines, uncertainty analysis, repeated holdouts, and independent reconstruction remain open.
+Current permitted statement:
+
+> The original finance validation failed independent audit. A redesigned run produced promising raw incremental-ranking results, but code review found a protocol-implementation mismatch; those results are preserved as a procedural scar while a corrected fresh successor is prepared.
 
 No investment advice or production trading claim is made.
 
 ---
 
-## Contact
-
-Alexander Liantonio
-
----
-
-**Research principle:** reproduce the number, attack the interpretation, preserve the scar, and let the successor earn its own claim.
+**Research principle:** reproduce the number, attack the interpretation, preserve the scar, and make every successor earn its own claim.
