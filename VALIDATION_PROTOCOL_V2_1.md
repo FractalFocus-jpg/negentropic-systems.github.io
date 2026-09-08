@@ -5,7 +5,7 @@
 **Status:** FROZEN BEFORE EXECUTION / CODE REVIEW REQUIRED BEFORE MERGE  
 **Parents:** historical March adverse audit; `KFIN-V2-20260908-001` raw receipt; procedural adjudication in `adjudications/KFIN-V2-20260908-001.md`.
 
-This is a fresh one-use successor. It does not repair or reinterpret the consumed V2 identity. The scientific target, feature map, split, metrics, and average-precision pass rule are intentionally unchanged from V2.1's V2 parent; only the two implementation defects identified by Codex are corrected: persistence uses the exact frozen target threshold, and receipt creation is structurally create-only.
+This is a fresh one-use successor. It does not repair or reinterpret the consumed V2 identity. The scientific target, feature map, split, metrics, and average-precision pass rule are intentionally unchanged from the V2 parent. V2.1 corrects the implementation defect that made V2 procedural rather than confirmatory—persistence uses the exact frozen target threshold—and hardens the one-use execution membrane in response to pre-execution code review: create-only receipts, authorized GitHub-Actions-only execution, live-main consumption checks, and automatic durable persistence of the first terminal.
 
 ---
 
@@ -116,9 +116,12 @@ The implementation must fail closed if:
 - target-window ordering or train/test separation is violated;
 - target or score thresholds use test data;
 - required rows/columns/classes are insufficient;
-- a canonical V2.1 receipt already exists in the repository;
+- the live `main` branch already contains the canonical V2.1 receipt;
+- the checked-out tree already contains that canonical receipt;
 - the local scientific receipt path already exists;
-- GitHub Actions reports `GITHUB_RUN_ATTEMPT > 1`;
+- GitHub Actions reports a run attempt other than exactly `1`;
+- the executor is not GitHub Actions, the event is not `push`, the repository is not the declared repository, or the ref is not `refs/heads/main`;
+- the authenticated GitHub token required to query durable consumption state is absent;
 - non-finite required values survive admissible-row filtering.
 
 ### Create-only receipt law
@@ -127,13 +130,13 @@ The scientific receipt must be created using exclusive/create-only file semantic
 
 Implementation/data errors must be written to a separate create-only error receipt and may never replace a scientific terminal.
 
-A repeat-attempt refusal must be written to a separate create-only refusal receipt and must exit nonzero.
+A repeat/unauthorized-executor refusal must be written to a separate create-only refusal receipt, must not create a second error receipt, and must exit nonzero.
 
 ---
 
-## 8. Executor and review membrane
+## 8. Executor, review, and durable-consumption membrane
 
-The only admitted first executor is `.github/workflows/kappa-validation-v2-1.yml` on GitHub Actions after this branch receives automated code review and any review findings are resolved **before merge**.
+The only admitted first executor is `.github/workflows/kappa-validation-v2-1.yml` on GitHub Actions after this branch receives automated code review and all material review findings are resolved **before merge**.
 
 The workflow:
 
@@ -141,9 +144,16 @@ The workflow:
 - has no manual `workflow_dispatch` trigger;
 - uses Python `3.11.16`;
 - pins `pandas==3.0.5`, `numpy==2.4.6`, and `scikit-learn==1.9.0`;
-- uploads scientific/error/refusal receipt plus console log as an immutable run artifact;
-- fails CI on implementation, data, or repeat-attempt refusal;
+- passes the ephemeral GitHub token only to the one-use guard and persistence operations;
+- queries the **live main branch** for `receipts/KFIN-V2_1-20260908-002.json` before admitting execution, so a clean checkout cannot silently reuse a consumed identity;
+- uploads the scientific/error/refusal receipt plus console log as the run artifact;
+- after the first scientific or implementation-error terminal, uses the GitHub Contents API with create-only semantics to write that exact terminal into `receipts/KFIN-V2_1-20260908-002.json` on live `main` before the job completes;
+- never overwrites an existing canonical receipt;
+- serializes matching runs with one concurrency group;
+- fails CI on implementation, data, repeat-attempt, unauthorized-executor, or receipt-ambiguity terminals;
 - treats a scientifically valid PASS or FAIL as a completed execution rather than retrying to win.
+
+Because the canonical receipt path is not part of the workflow trigger paths, automatic persistence of the first terminal does not trigger the experiment again. Any later push that would otherwise trigger the workflow must query live main, observe the canonical receipt, and fail closed before analysis.
 
 ---
 
@@ -169,7 +179,7 @@ A valid FAIL falsifies incremental content only for this exact frozen successor.
 After either a valid PASS or FAIL:
 
 1. preserve the first raw receipt and hashes;
-2. commit an additive adjudication/currentness pointer without editing the raw receipt;
+2. add an adjudication/currentness pointer without editing the raw receipt;
 3. run block/bootstrap uncertainty only under a fresh analysis identity;
 4. preregister stronger conventional volatility baselines (e.g. HAR/GARCH-family) under a fresh successor;
 5. test additional independent temporal holdouts and/or prospective data;
